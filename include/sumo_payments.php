@@ -220,19 +220,41 @@ class Sumo_Gateway extends WC_Payment_Gateway
 
     public function validate_fields()
     {
-        if ($this->check_sumo() != TRUE) {
+        if ($this->check_subaddress_with_subaddress_payments() != TRUE) {
+            echo "<div class=\"error\"><p>Do not mix subdaddresses with subaddress payments.</p></div>";
+        }
+        if ($this->check_sumo_address() != TRUE) {
             echo "<div class=\"error\"><p>Your Sumokoin address doesn't seem to be valid. Check that you've inserted it correctly.</p></div>";
         }
-
     }
 
 
     // Validate fields
 
-    public function check_sumo()
+    public function check_subaddress_with_subaddress_payments()
+    {
+        $addr = $this->settings['sumo_address'];
+        if ($this->settings['subaddress_payments'] == "yes")
+        {
+            if ($this->settings['environment'] == "no") {
+                if (substr($addr, 4) == "Subo") {
+                    return false;
+                }
+            } else {
+                if (substr($addr, 4) == "Susu") {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    public function check_sumo_address()
     {
         require_once __DIR__ . '/cryptonote.php';
-        $addr = $this->settings['sumo_address'];
+        
+        $addr = $this->settings['sumo_address'];       
         if (function_exists('bcadd'))
         {
             $prefixes = $this->settings['environment'] == "no" ? 
