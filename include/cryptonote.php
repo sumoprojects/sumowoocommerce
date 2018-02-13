@@ -1,5 +1,8 @@
 <?php
 
+/*
+ * Copyright (c) 2017 Phillip Whelan
+ */
 require_once __DIR__ . '/keccak256.php';
 require_once __DIR__ . '/base58.php';
 

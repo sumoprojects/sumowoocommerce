@@ -1,5 +1,8 @@
 <?php
 
+/*
+ * Copyright (c) 2017 Phillip Whelan
+ */
 class Base58
 {
 	private static $alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

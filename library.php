@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * Copyright (c) 2017 Monero Integrations
  * library.php
  *
  * Written using the JSON RPC specification -
@@ -9,7 +10,7 @@
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
  * Modified to work with monero-rpc wallet by Serhack and cryptochangements
- * Modified to work with sumo-rpc wallet by Madjester
+ * Modified to work with sumo-rpc wallet by Phillip Whelan
  * This code isn't for Dark Net Markets, please report them to Authority!
  */
 class Sumo_Library

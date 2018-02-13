@@ -3,6 +3,8 @@
 /* 
  * Main Gateway of Sumo using a daemon online 
  * Authors: Serhack and cryptochangements
+ * Copyright (c) 2017 Monero Integrations
+ * Copyright (c) 2017 Phillip Whelan
  */
 
 
