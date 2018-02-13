@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * Copyright (c) 2017 Monero Integrations
+ * Copyright (c) 2017 Phillip Whelan
+ */
 class Sumo_Payment
 {
     private $payment_id;
