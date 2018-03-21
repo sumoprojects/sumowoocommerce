@@ -58,6 +58,11 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $this->sumo_daemon = new Sumo_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
     }
 
+    public function get_icon()
+    {
+        return apply_filters('woocommerce_gateway_icon', "<img src='".plugins_url('/../assets/sumo-logo.png', __FILE__ )."'>");
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = array(
@@ -302,6 +307,10 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $uri = $payment->get_uri($amount_sumo2);
         $this->confirmed = $payment->verify($order, $amount_sumo2);
         $message = "We are waiting for your payment to be confirmed";
+	
+	$order->update_meta_data( "Address", $payment->get_address());
+        $order->update_meta_data( "Amount requested (SUMO)", $amount_sumo2);
+        $order->save();
         
         if ($this->confirmed) {
             $message = "Payment has been received and confirmed. Thanks!";
