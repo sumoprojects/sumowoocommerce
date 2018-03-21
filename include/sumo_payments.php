@@ -307,6 +307,10 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $uri = $payment->get_uri($amount_sumo2);
         $this->confirmed = $payment->verify($order, $amount_sumo2);
         $message = "We are waiting for your payment to be confirmed";
+	
+	$order->update_meta_data( "Address", $payment->get_address());
+        $order->update_meta_data( "Amount requested (SUMO)", $amount_sumo2);
+        $order->save();
         
         if ($this->confirmed) {
             $message = "Payment has been received and confirmed. Thanks!";
