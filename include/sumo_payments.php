@@ -58,6 +58,11 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $this->sumo_daemon = new Sumo_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
     }
 
+    public function get_icon()
+    {
+        return apply_filters('woocommerce_gateway_icon', "<img src='".plugins_url('/../assets/sumo-logo.png', __FILE__ )."'>");
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = array(
@@ -325,7 +330,33 @@ class Sumo_Gateway extends WC_Payment_Gateway
         <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
         <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
         <link href='".plugins_url('/../assets/style.css', __FILE__)."' rel='stylesheet'>
-        <!--Let browser know website is optimized for mobile-->
+        <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.8/css/all.css' integrity='sha384-3AB7yXWz4OeoZcPbieVW64vVXEwADiYyAEhwilzWsLw+9FgqpyjjStpPnpBO8o8S' crossorigin='anonymous'>
+            <script>
+            function SumoCopy() {
+            var copyText = document.getElementById('sumo-amount');
+            copyText.select();
+            document.execCommand('Copy');
+  
+            var tooltip = document.getElementById('SumoTooltipAmount');
+            tooltip.innerHTML = 'Copied: ' + copyText.value;
+            }
+            function AddressCopy() {
+            var copyText = document.getElementById('sumo-address');
+            copyText.select();                                      
+            document.execCommand('Copy'); 
+            var tooltip = document.getElementById('SumoTooltipAddress');
+            tooltip.innerHTML = 'Copied: ' + copyText.value;
+            }
+            function outSUMO() {
+            var tooltip = document.getElementById('SumoTooltipAmount');
+            tooltip.innerHTML = 'Copy to clipboard';
+            }
+            function outAddress() {
+            var tooltip = document.getElementById('SumoTooltipAddress');
+            tooltip.innerHTML = 'Copy to clipboard';
+            }
+            </script>
+            <!--Let browser know website is optimized for mobile-->
             <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
             </head>
             <body>
@@ -343,12 +374,12 @@ class Sumo_Gateway extends WC_Payment_Gateway
             <div class='content-xmr-payment'>
             <div class='sumo-amount-send'>
             <span class='sumo-label'>Send:</span>
-            <div class='sumo-amount-box'>".$amount_sumo2."</div><div class='sumo-box'>SUMO</div>
+            <input class='sumo-amount-box' id='sumo-amount' type='text' value='".$amount_sumo2."' readonly><div class='sumo-box' onclick='SumoCopy()' onmouseout='outSUMO()'><i class='far fa-copy'></i> SUMO<span class='SumoTooltip' id='SumoTooltipAmount'>Copy to clipboard</span></div>
             </div>
             <div class='sumo-address'>
             <span class='sumo-label'>To this address:</span>
-            <div class='sumo-address-box'>".$payment->get_address()."</div>
-            </div>
+            <textarea class='sumo-address-box' id='sumo-address' type='text' readonly>".$payment->get_address()."</textarea><div class='sumo-box' onclick='AddressCopy()' style='margin-right:10px' onmouseout='outAddress()'><i class='far fa-copy'></i><span class='SumoTooltip' id='SumoTooltipAddress'>Copy to clipboard</span></div>
+            </div> 
             <div class='sumo-qr-code'>
             <span class='sumo-label'>Or scan QR:</span>
             <div class='sumo-qr-code-box'><img src='https://api.qrserver.com/v1/create-qr-code/? size=200x200&data=".$uri."' /></div>
@@ -379,7 +410,7 @@ class Sumo_Gateway extends WC_Payment_Gateway
         require_once __DIR__ . '/sumo_payment.php';
         return new Sumo_Payment($this, $order_id);
     }
-
+    
     public function changeto($amount, $currency, $order_id)
     {
         global $wpdb;
