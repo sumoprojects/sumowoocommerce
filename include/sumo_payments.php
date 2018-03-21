@@ -58,6 +58,11 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $this->sumo_daemon = new Sumo_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
     }
 
+    public function get_icon()
+    {
+        return apply_filters('woocommerce_gateway_icon', "<img src='".plugins_url('/../assets/sumo-logo.png', __FILE__ )."'>");
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = array(
@@ -375,7 +380,7 @@ class Sumo_Gateway extends WC_Payment_Gateway
         require_once __DIR__ . '/sumo_payment.php';
         return new Sumo_Payment($this, $order_id);
     }
-
+    
     public function changeto($amount, $currency, $order_id)
     {
         global $wpdb;
