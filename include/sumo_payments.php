@@ -410,8 +410,8 @@ class Sumo_Gateway extends WC_Payment_Gateway
         require_once __DIR__ . '/sumo_payment.php';
         return new Sumo_Payment($this, $order_id);
     }
-    
-    public function changeto($amount, $currency, $order_id)
+
+    private function get_rate($currency, $order_id)
     {
         global $wpdb;
         // This will create a table named whatever the payment id is inside the database "WordPress"
@@ -439,33 +439,37 @@ class Sumo_Gateway extends WC_Payment_Gateway
                 WHERE order_id = %s
             ", [$order_id]);
             $stored_rate = $wpdb->get_results($sql);
-
-            $stored_rate_transformed = $stored_rate[0]->rate; //this will turn the stored rate back into a decimaled number
-
-            if (isset($this->discount)) {
-                $discount_decimal = $this->discount / 100;
-                $new_amount = $amount / $stored_rate_transformed;
-                $discount = $new_amount * $discount_decimal;
-                $final_amount = $new_amount - $discount;
-                $rounded_amount = round($final_amount, 9);
-            } else {
-                $new_amount = $amount / $stored_rate_transformed;
-                $rounded_amount = round($new_amount, 9); //the sumokoin wallet can't handle decimals smaller than 0.000000000001
-            }
-        } else // If the row has not been created then the live exchange rate will be grabbed and stored
-        {
-            $sumo_live_price = $this->retrieveprice($currency);
-            if ($sumo_live_price == -1) return -1;
-            $new_amount = $amount / $sumo_live_price;
-            $rounded_amount = round($new_amount, 9);
-            
-            $sql = $wpdb->prepare("
-                INSERT INTO {$wpdb->prefix}sumo_order_rates (order_id, currency, rate)
-                VALUES (%s, %s, %f)
-            ", [$order_id, $currency, $sumo_live_price]);
-            $wpdb->query($sql);
+            return $stored_rate[0]->rate; //this will turn the stored rate back into a decimaled number
         }
-
+        
+        $sumo_live_price = $this->retrieveprice($currency);
+        if ($sumo_live_price == -1) return -1;
+        
+        $sql = $wpdb->prepare("
+            INSERT INTO {$wpdb->prefix}sumo_order_rates (order_id, currency, rate)
+            VALUES (%s, %s, %f)
+        ", [$order_id, $currency, $sumo_live_price]);
+        $wpdb->query($sql);
+        
+        return $sumo_live_price;
+    }
+    
+    public function changeto($amount, $currency, $order_id)
+    {
+        $rate = $this->get_rate($currency, $order_id);
+        if ($rate == -1) return -1;
+        
+        if (isset($this->discount)) {
+            $discount_decimal = $this->discount / 100;
+            $new_amount = $amount / $rate;
+            $discount = $new_amount * $discount_decimal;
+            $final_amount = $new_amount - $discount;
+            $rounded_amount = round($final_amount, 9);
+        } else {
+            $new_amount = $amount / $rate;
+            $rounded_amount = round($new_amount, 9); //the sumokoin wallet can't handle decimals smaller than 0.000000000001
+        }
+        
         return $rounded_amount;
     }
 
