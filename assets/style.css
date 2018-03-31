@@ -86,11 +86,13 @@ span.sumo-label {
 .sumo-box {
     float: left;
     background-color: #2d9cdb;
-    padding: 8px;
     border-style: solid;
     border-width: 1px;
     border-color: #666;
     color: #fff;
+    position: absolute;
+    display: inline-block;
+    padding: 4px;
 }
 
 
@@ -154,7 +156,42 @@ span.sumo-label {
     margin: 0px;
     line-height: 70px;
 }
+textarea {
+    width: 95%;
+}
 
+.sumo-box .SumoTooltip {
+    visibility: hidden;
+    width: 140px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -75px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sumo-box .SumoTooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+
+.sumo-box:hover .SumoTooltip {
+    visibility: visible;
+    opacity: 1;
+}
 
 /* desktop display */
 @media only screen and  (min-width: 700px) and (max-width: 4280px) {
