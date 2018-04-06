@@ -58,6 +58,11 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $this->sumo_daemon = new Sumo_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
     }
 
+    public function get_icon()
+    {
+        return apply_filters('woocommerce_gateway_icon', "<img src='".plugins_url('/../assets/sumo-logo.png', __FILE__ )."'>");
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = array(
@@ -302,6 +307,10 @@ class Sumo_Gateway extends WC_Payment_Gateway
         $uri = $payment->get_uri($amount_sumo2);
         $this->confirmed = $payment->verify($order, $amount_sumo2);
         $message = "We are waiting for your payment to be confirmed";
+	
+	$order->update_meta_data( "Address", $payment->get_address());
+        $order->update_meta_data( "Amount requested (SUMO)", $amount_sumo2);
+        $order->save();
         
         if ($this->confirmed) {
             $message = "Payment has been received and confirmed. Thanks!";
@@ -321,7 +330,33 @@ class Sumo_Gateway extends WC_Payment_Gateway
         <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
         <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
         <link href='".plugins_url('/../assets/style.css', __FILE__)."' rel='stylesheet'>
-        <!--Let browser know website is optimized for mobile-->
+        <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.8/css/all.css' integrity='sha384-3AB7yXWz4OeoZcPbieVW64vVXEwADiYyAEhwilzWsLw+9FgqpyjjStpPnpBO8o8S' crossorigin='anonymous'>
+            <script>
+            function SumoCopy() {
+            var copyText = document.getElementById('sumo-amount');
+            copyText.select();
+            document.execCommand('Copy');
+  
+            var tooltip = document.getElementById('SumoTooltipAmount');
+            tooltip.innerHTML = 'Copied: ' + copyText.value;
+            }
+            function AddressCopy() {
+            var copyText = document.getElementById('sumo-address');
+            copyText.select();                                      
+            document.execCommand('Copy'); 
+            var tooltip = document.getElementById('SumoTooltipAddress');
+            tooltip.innerHTML = 'Copied: ' + copyText.value;
+            }
+            function outSUMO() {
+            var tooltip = document.getElementById('SumoTooltipAmount');
+            tooltip.innerHTML = 'Copy to clipboard';
+            }
+            function outAddress() {
+            var tooltip = document.getElementById('SumoTooltipAddress');
+            tooltip.innerHTML = 'Copy to clipboard';
+            }
+            </script>
+            <!--Let browser know website is optimized for mobile-->
             <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
             </head>
             <body>
@@ -339,12 +374,12 @@ class Sumo_Gateway extends WC_Payment_Gateway
             <div class='content-xmr-payment'>
             <div class='sumo-amount-send'>
             <span class='sumo-label'>Send:</span>
-            <div class='sumo-amount-box'>".$amount_sumo2."</div><div class='sumo-box'>SUMO</div>
+            <input class='sumo-amount-box' id='sumo-amount' type='text' value='".$amount_sumo2."' readonly><div class='sumo-box' onclick='SumoCopy()' onmouseout='outSUMO()'><i class='far fa-copy'></i> SUMO<span class='SumoTooltip' id='SumoTooltipAmount'>Copy to clipboard</span></div>
             </div>
             <div class='sumo-address'>
             <span class='sumo-label'>To this address:</span>
-            <div class='sumo-address-box'>".$payment->get_address()."</div>
-            </div>
+            <textarea class='sumo-address-box' id='sumo-address' type='text' readonly>".$payment->get_address()."</textarea><div class='sumo-box' onclick='AddressCopy()' style='margin-right:10px' onmouseout='outAddress()'><i class='far fa-copy'></i><span class='SumoTooltip' id='SumoTooltipAddress'>Copy to clipboard</span></div>
+            </div> 
             <div class='sumo-qr-code'>
             <span class='sumo-label'>Or scan QR:</span>
             <div class='sumo-qr-code-box'><img src='https://api.qrserver.com/v1/create-qr-code/? size=200x200&data=".$uri."' /></div>
@@ -376,7 +411,7 @@ class Sumo_Gateway extends WC_Payment_Gateway
         return new Sumo_Payment($this, $order_id);
     }
 
-    public function changeto($amount, $currency, $order_id)
+    private function get_rate($currency, $order_id)
     {
         global $wpdb;
         // This will create a table named whatever the payment id is inside the database "WordPress"
@@ -404,33 +439,37 @@ class Sumo_Gateway extends WC_Payment_Gateway
                 WHERE order_id = %s
             ", [$order_id]);
             $stored_rate = $wpdb->get_results($sql);
-
-            $stored_rate_transformed = $stored_rate[0]->rate; //this will turn the stored rate back into a decimaled number
-
-            if (isset($this->discount)) {
-                $discount_decimal = $this->discount / 100;
-                $new_amount = $amount / $stored_rate_transformed;
-                $discount = $new_amount * $discount_decimal;
-                $final_amount = $new_amount - $discount;
-                $rounded_amount = round($final_amount, 9);
-            } else {
-                $new_amount = $amount / $stored_rate_transformed;
-                $rounded_amount = round($new_amount, 9); //the sumokoin wallet can't handle decimals smaller than 0.000000000001
-            }
-        } else // If the row has not been created then the live exchange rate will be grabbed and stored
-        {
-            $sumo_live_price = $this->retrieveprice($currency);
-            if ($sumo_live_price == -1) return -1;
-            $new_amount = $amount / $sumo_live_price;
-            $rounded_amount = round($new_amount, 9);
-            
-            $sql = $wpdb->prepare("
-                INSERT INTO {$wpdb->prefix}sumo_order_rates (order_id, currency, rate)
-                VALUES (%s, %s, %f)
-            ", [$order_id, $currency, $sumo_live_price]);
-            $wpdb->query($sql);
+            return $stored_rate[0]->rate; //this will turn the stored rate back into a decimaled number
         }
-
+        
+        $sumo_live_price = $this->retrieveprice($currency);
+        if ($sumo_live_price == -1) return -1;
+        
+        $sql = $wpdb->prepare("
+            INSERT INTO {$wpdb->prefix}sumo_order_rates (order_id, currency, rate)
+            VALUES (%s, %s, %f)
+        ", [$order_id, $currency, $sumo_live_price]);
+        $wpdb->query($sql);
+        
+        return $sumo_live_price;
+    }
+    
+    public function changeto($amount, $currency, $order_id)
+    {
+        $rate = $this->get_rate($currency, $order_id);
+        if ($rate == -1) return -1;
+        
+        if (isset($this->discount)) {
+            $discount_decimal = $this->discount / 100;
+            $new_amount = $amount / $rate;
+            $discount = $new_amount * $discount_decimal;
+            $final_amount = $new_amount - $discount;
+            $rounded_amount = round($final_amount, 9);
+        } else {
+            $new_amount = $amount / $rate;
+            $rounded_amount = round($new_amount, 9); //the sumokoin wallet can't handle decimals smaller than 0.000000000001
+        }
+        
         return $rounded_amount;
     }
 
