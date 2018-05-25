@@ -259,7 +259,7 @@ class Sumo_Gateway extends WC_Payment_Gateway
     
     public function check_sumo_address()
     {
-        require_once __DIR__ . '/cryptonote.php';
+        require_once __DIR__ . '/crypto/cryptonote.php';
         
         $addr = $this->settings['sumo_address'];       
         if (function_exists('bcadd'))
